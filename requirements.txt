@@ -3,3 +3,11 @@ PyMuPDF
 pdfplumber
 pdf2image
 pytesseract
+fastapi
+requests
+pymongo
+langchain_huggingface
+langchain_community
+sentence-transformers
+python-multipart
+uvicorn

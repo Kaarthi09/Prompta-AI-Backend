@@ -1,7 +1,7 @@
-from typing import List
+from typing import List, Union
 from uuid import UUID
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 # 1. Message Schema (Child)
 class MessageRead(BaseModel):
@@ -9,32 +9,26 @@ class MessageRead(BaseModel):
     messageText: str
     createdAt: datetime
     messageIndex: int
-    fileNames: List[str] = []
+    fileNames: List[str] = Field(default_factory=list)
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # 2. Conversation Schema (Parent)
 class ConversationRead(BaseModel):
-    conversationId: UUID
+    conversationId: Union[UUID, str]
     conversationName: str
     createdAt: datetime
     updatedAt: datetime
     isArchived: int
     isPinned: int
-    # This field will carry the list of messages
-    messages: List[MessageRead] = [] 
+    messages: List[MessageRead] = Field(default_factory=list)
 
-    class Config:
-        # This ensures the database model maps correctly to this schema
-        orm_mode = True
-        # Keep compatibility hint for newer Pydantic: some setups expect from_attributes
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class RenameRequest(BaseModel):
     newTitle: str
 
 class ChatResponse(BaseModel):
-    conversationId: UUID
+    conversationId: Union[UUID, str]
     messageIndex: int
     message: str

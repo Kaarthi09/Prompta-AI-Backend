@@ -1,25 +1,30 @@
-from sqlmodel import create_engine, Session
-from urllib.parse import quote_plus
+import os
+from pymongo import MongoClient, ASCENDING
+from pymongo.database import Database
 
-server = "DESKTOP-9467S9F\\GEEK"
-database = "ChatDB"
-username = "sa"
-password = "123"
-driver = "ODBC Driver 17 for SQL Server"
+# MongoDB Configuration
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+DB_NAME = os.getenv("MONGODB_DB_NAME", "PromptaAIDB")
 
-params = quote_plus(
-    f"DRIVER={{{driver}}};"
-    f"SERVER={server};"
-    f"DATABASE={database};"
-    f"UID={username};"
-    f"PWD={password};"
-    "TrustServerCertificate=yes;"
-)
+# Create PyMongo Client
+client = MongoClient(MONGODB_URI)
+db: Database = client[DB_NAME]
 
-DATABASE_URL = f"mssql+pyodbc:///?odbc_connect={params}"
+# Collections
+conversations_collection = db["conversations"]
+messages_collection = db["messages"]
+file_chunks_collection = db["file_chunks"]
 
-engine = create_engine(DATABASE_URL, echo=False)
+def init_db_indexes():
+    """Ensure database indexes exist for performance and unique constraint integrity."""
+    try:
+        conversations_collection.create_index([("conversationId", ASCENDING)], unique=True)
+        messages_collection.create_index([("conversationId", ASCENDING), ("messageIndex", ASCENDING)])
+        file_chunks_collection.create_index([("conversationId", ASCENDING), ("messageIndex", ASCENDING)])
+        print(f"--- MongoDB initialized successfully. Connected to DB '{DB_NAME}' ---")
+    except Exception as e:
+        print(f"--- Error initializing MongoDB indexes: {e} ---")
 
-def get_session():
-    with Session(engine) as session:
-        yield session
+def get_db() -> Database:
+    """FastAPI Dependency for obtaining the MongoDB database instance."""
+    return db
